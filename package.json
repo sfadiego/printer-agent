@@ -1,0 +1,16 @@
+{
+  "name": "print-agent",
+  "version": "1.0.0",
+  "description": "Agente WebSocket local para impresora térmica USB",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "pkg index.js --targets node18-macos-x64,node18-win-x64 --output dist/print-agent"
+  },
+  "pkg": {
+    "assets": []
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
