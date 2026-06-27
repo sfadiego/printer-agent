@@ -21,8 +21,12 @@ try {
     process.exit(1);
 }
 
-const PRINTER = config.printer;
 const PORT    = config.port || 8765;
+
+// CUPS en macOS normaliza guiones a guiones bajos en los nombres de cola
+const PRINTER = process.platform === "darwin"
+    ? config.printer.replace(/-/g, "_")
+    : config.printer;
 
 if (!PRINTER) {
     console.error('[print-agent] ERROR: El campo "printer" está vacío en config.json.');
@@ -32,27 +36,45 @@ if (!PRINTER) {
 // ─── Impresión ────────────────────────────────────────────────────────────────
 
 function printBytes(data, callback) {
-    const tmpFile = path.join(os.tmpdir(), `ticket-${Date.now()}.bin`);
-    fs.writeFileSync(tmpFile, data);
+    // Usar /tmp directo — os.tmpdir() puede retornar ruta interna en pkg
+    const tmpFile = `/tmp/ticket-${Date.now()}.bin`;
+
+    try {
+        fs.writeFileSync(tmpFile, data);
+    } catch (e) {
+        return callback(new Error(`No se pudo crear archivo temporal: ${e.message}`));
+    }
+
+    if (!fs.existsSync(tmpFile)) {
+        return callback(new Error(`Archivo temporal no encontrado: ${tmpFile}`));
+    }
+
+    console.log(`[print-agent] Archivo temporal: ${tmpFile} (${fs.statSync(tmpFile).size} bytes)`);
 
     const platform = process.platform;
 
     if (platform === "darwin" || platform === "linux") {
-        const cmd = `lp -d "${PRINTER}" -o raw "${tmpFile}"`;
-        exec(cmd, (err, _stdout, stderr) => {
-            fs.unlinkSync(tmpFile);
-            if (err) return callback(new Error(stderr || err.message));
+        const lp  = "/usr/bin/lp";
+        const cmd = `${lp} -d "${PRINTER}" -o raw "${tmpFile}"`;
+        console.log(`[print-agent] Ejecutando: ${cmd}`);
+        exec(cmd, (err, stdout, stderr) => {
+            try { fs.unlinkSync(tmpFile); } catch {}
+            if (err) {
+                console.error(`[print-agent] stdout: ${stdout}`);
+                console.error(`[print-agent] stderr: ${stderr}`);
+                return callback(new Error(stderr || err.message));
+            }
             callback(null);
         });
     } else if (platform === "win32") {
         const cmd = `copy /b "${tmpFile}" "\\\\localhost\\${PRINTER}"`;
         exec(cmd, (err, _stdout, stderr) => {
-            fs.unlinkSync(tmpFile);
+            try { fs.unlinkSync(tmpFile); } catch {}
             if (err) return callback(new Error(stderr || err.message));
             callback(null);
         });
     } else {
-        fs.unlinkSync(tmpFile);
+        try { fs.unlinkSync(tmpFile); } catch {}
         callback(new Error(`Plataforma no soportada: ${platform}`));
     }
 }

@@ -168,7 +168,7 @@ launchctl load ~/Library/LaunchAgents/com.pos.printagent.plist
 
 **Error al imprimir en macOS/Linux**
 - Verificar el nombre de la impresora con `lpstat -p`.
-- El nombre en `config.json` debe coincidir exactamente (CUPS convierte guiones a guiones bajos en macOS).
+- El agente normaliza automáticamente guiones (`-`) a guiones bajos (`_`) en macOS, ya que CUPS registra los nombres así. Por ejemplo, `OFICHIDO-POS-58` en `config.json` se envía como `OFICHIDO_POS_58` a CUPS.
 
 **La impresora imprime caracteres extraños**
 - La impresora no es compatible con ESC/POS o el driver está procesando los bytes. Verificar que la cola CUPS use el driver correcto para impresoras térmicas.
