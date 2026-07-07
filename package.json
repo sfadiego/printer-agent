@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "build": "pkg index.js --targets node18-macos-x64,node18-win-x64 --output dist/print-agent"
+    "build": "pkg index.js --targets node18-macos-x64,node18-win-x64 --output dist/print-agent && node -e \"require('fs').copyFileSync('config.json','dist/config.json')\""
   },
   "pkg": {
     "assets": []

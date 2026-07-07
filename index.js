@@ -36,8 +36,10 @@ if (!PRINTER) {
 // ─── Impresión ────────────────────────────────────────────────────────────────
 
 function printBytes(data, callback) {
-    // Usar /tmp directo — os.tmpdir() puede retornar ruta interna en pkg
-    const tmpFile = `/tmp/ticket-${Date.now()}.bin`;
+    // En macOS, os.tmpdir() puede retornar una ruta interna del binario de pkg,
+    // así que forzamos /tmp. En Windows/Linux os.tmpdir() sí es confiable.
+    const tmpDir  = process.platform === "darwin" ? "/tmp" : os.tmpdir();
+    const tmpFile = path.join(tmpDir, `ticket-${Date.now()}.bin`);
 
     try {
         fs.writeFileSync(tmpFile, data);
