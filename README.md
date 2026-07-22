@@ -24,7 +24,7 @@ Agente local de impresión para impresoras térmicas USB. Actúa como puente ent
 ## Requisitos
 
 - **macOS / Linux:** CUPS instalado (viene por defecto en macOS).
-- **Windows:** Impresora compartida localmente.
+- **Windows:** Impresora compartida en red local (ver instrucciones abajo).
 - **Node.js 18+** (solo si corres desde el código fuente).
 
 ---
@@ -65,7 +65,7 @@ Para conocer el nombre exacto de la impresora:
   ```bash
   lpstat -p
   ```
-- **Windows:** Panel de control → Dispositivos e impresoras → nombre de la impresora.
+- **Windows:** ver sección "Configuración en Windows" más abajo.
 
 ### 3. Ejecutar
 
@@ -160,11 +160,40 @@ launchctl load ~/Library/LaunchAgents/com.pos.printagent.plist
 
 ---
 
+## Configuración en Windows
+
+El agente imprime enviando bytes ESC/POS a una impresora compartida en red local. Se requiere:
+
+### 1. Compartir la impresora
+
+1. Ir a **Configuración → Bluetooth y dispositivos → Impresoras y escáneres**.
+2. Clic en la impresora térmica → **Propiedades de la impresora**.
+3. Pestaña **Compartir** → marcar **Compartir esta impresora**.
+4. Anotar el **Nombre del recurso compartido** (puede ser diferente al nombre de la impresora).
+
+> ⚠️ El campo `printer` en `config.json` debe ser el **nombre del recurso compartido**, no el nombre de pantalla de la impresora.
+
+### 2. Habilitar el compartir archivos e impresoras
+
+En el **Firewall de Windows** asegurarse de que esté habilitada la regla  
+**"Compartir archivos e impresoras"** para redes privadas.
+
+### 3. Verificar la conexión
+
+Desde un símbolo del sistema (`cmd`) ejecutar:
+```cmd
+net view \\localhost
+```
+Debe aparecer la impresora en la lista de recursos compartidos.
+
+---
+
 ## Solución de problemas
 
 **El navegador no se conecta al agente**
 - Verificar que el agente esté corriendo y que la consola muestre `Listo`.
 - Verificar que el puerto 8765 no esté bloqueado por un firewall local.
+- **Windows:** Si el agente está corriendo pero el navegador dice "no conectado", es un problema de resolución de `localhost`. En Windows 10/11, `localhost` puede resolverse a IPv6 (`::1`) mientras versiones anteriores usaban IPv4 (`127.0.0.1`). Esto se resuelve usando la versión del agente >= 1.1.0 (que ya escucha en ambas).
 
 **Error al imprimir en macOS/Linux**
 - Verificar el nombre de la impresora con `lpstat -p`.

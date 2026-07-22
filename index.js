@@ -23,9 +23,9 @@ try {
 
 const PORT    = config.port || 8765;
 
-// CUPS en macOS normaliza guiones a guiones bajos en los nombres de cola
+// CUPS en macOS normaliza guiones y espacios a guiones bajos en los nombres de cola
 const PRINTER = process.platform === "darwin"
-    ? config.printer.replace(/-/g, "_")
+    ? config.printer.replace(/[-\s]/g, "_")
     : config.printer;
 
 if (!PRINTER) {
@@ -82,8 +82,11 @@ function printBytes(data, callback) {
 }
 
 // ─── WebSocket Server ─────────────────────────────────────────────────────────
+// Sin "host" → Node.js usa "::" por defecto, que acepta tanto IPv4 (127.0.0.1)
+// como IPv6 (::1) en sistemas dual-stack. Esto resuelve el problema de Windows
+// donde "localhost" puede resolver a ::1 en lugar de 127.0.0.1.
 
-const wss = new WebSocketServer({ port: PORT, host: "127.0.0.1" });
+const wss = new WebSocketServer({ port: PORT });
 
 console.log(`[print-agent] Impresora : ${PRINTER}`);
 console.log(`[print-agent] Puerto    : ${PORT}`);
