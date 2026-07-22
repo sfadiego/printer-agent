@@ -199,6 +199,10 @@ Debe aparecer la impresora en la lista de recursos compartidos.
 - Verificar el nombre de la impresora con `lpstat -p`.
 - El agente normaliza automáticamente guiones (`-`) a guiones bajos (`_`) en macOS, ya que CUPS registra los nombres así. Por ejemplo, `OFICHIDO-POS-58` en `config.json` se envía como `OFICHIDO_POS_58` a CUPS.
 
+**La impresora imprime en blanco (Windows)**
+- El spooler de Windows convierte los bytes ESC/POS a formato GDI antes de enviarlos, lo que produce papel en blanco. El agente detecta automáticamente el puerto físico de la impresora (USB001, COM1, etc.) y escribe directamente al dispositivo para evitarlo.
+- Si sigue imprimiendo en blanco, verificar en la consola del agente qué puerto detectó. Si dice "fallback a impresora compartida", el nombre en `config.json` no coincide exactamente con el nombre de la impresora en Windows. Ejecutar `wmic printer list brief` para ver los nombres exactos.
+
 **La impresora imprime caracteres extraños**
 - La impresora no es compatible con ESC/POS o el driver está procesando los bytes. Verificar que la cola CUPS use el driver correcto para impresoras térmicas.
 
