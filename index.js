@@ -69,33 +69,16 @@ function printBytes(data, callback) {
             callback(null);
         });
     } else if (platform === "win32") {
-        // Detectar el puerto físico de la impresora para escritura directa (bypassa el spooler).
-        // El spooler convierte los bytes ESC/POS a formato GDI → papel en blanco.
-        const wmicCmd = `wmic printer where "Name='${PRINTER}'" get PortName /format:value`;
-        exec(wmicCmd, (wmicErr, wmicOut) => {
-            const portMatch = wmicOut ? wmicOut.match(/PortName=(\S+)/) : null;
-            const portName  = portMatch ? portMatch[1].trim() : null;
-
-            let printCmd;
-            if (portName && /^(USB|COM|LPT)\d+$/i.test(portName)) {
-                // Acceso directo al dispositivo — raw bytes sin pasar por el spooler
-                console.log(`[print-agent] Puerto: ${portName} — escritura directa`);
-                printCmd = `copy /b "${tmpFile}" "\\\\.\\${portName}"`;
-            } else {
-                // Fallback: impresora compartida (funciona solo si el spooler está configurado en RAW)
-                console.log(`[print-agent] Puerto no detectado — fallback a impresora compartida`);
-                printCmd = `copy /b "${tmpFile}" "\\\\localhost\\${PRINTER}"`;
+        const cmd = `copy /b "${tmpFile}" "\\\\localhost\\${PRINTER}"`;
+        console.log(`[print-agent] Ejecutando: ${cmd}`);
+        exec(cmd, (err, stdout, stderr) => {
+            try { fs.unlinkSync(tmpFile); } catch {}
+            if (err) {
+                console.error(`[print-agent] stdout: ${stdout}`);
+                console.error(`[print-agent] stderr: ${stderr}`);
+                return callback(new Error(stderr || err.message));
             }
-
-            exec(printCmd, (err, stdout, stderr) => {
-                try { fs.unlinkSync(tmpFile); } catch {}
-                if (err) {
-                    console.error(`[print-agent] stdout: ${stdout}`);
-                    console.error(`[print-agent] stderr: ${stderr}`);
-                    return callback(new Error(stderr || err.message));
-                }
-                callback(null);
-            });
+            callback(null);
         });
     } else {
         try { fs.unlinkSync(tmpFile); } catch {}
